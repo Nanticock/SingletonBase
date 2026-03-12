@@ -1,16 +1,11 @@
 #ifndef EXTERNALSINGLETON_H
 #define EXTERNALSINGLETON_H
 
-#include <Core/SingletonBase.h>
-#include <Core/core_global.h>
+#include "ExternalSingleton_global.h"
+
+#include <PM/SingletonBase.h>
 
 #include <string>
-
-#if defined(EXTERNAL_SINGLETON_LIBRARY)
-#    define EXTERNAL_SINGLETON_API PM_DECL_EXPORT
-#else
-#    define EXTERNAL_SINGLETON_API PM_DECL_IMPORT
-#endif
 
 class EXTERNAL_SINGLETON_API ExternalSingleton : public PM::internal::SingletonBase<ExternalSingleton>
 {

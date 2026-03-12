@@ -1,10 +1,20 @@
-# Add the external Singleton library source files here
-# For example:
-# add_library(ExternalSingleton STATIC
-#     external_singleton.cpp
-# )
+add_library(ExternalSingleton SHARED
+    externalSingleton.h
+    ExternalSingleton.cpp
+    ExternalSingleton_global.h
+)
 
-# Specify any necessary include directories
-# target_include_directories(ExternalSingleton PUBLIC
-#     ${CMAKE_CURRENT_SOURCE_DIR}/include
-# )
+target_link_libraries(ExternalSingleton
+    PUBLIC
+        SingletonBase
+)
+
+target_include_directories(ExternalSingleton
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+target_compile_definitions(ExternalSingleton
+    PRIVATE
+        EXTERNALSINGLETON_LIB
+)

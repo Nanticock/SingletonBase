@@ -1,7 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
 project(SingletonBase)
 
-add_library(SingletonBase INTERFACE)
+add_library(SingletonBase INTERFACE
+    include/PM/SingletonBase.h
+    include/PM/ScopedSingletonState.h
+)
 target_include_directories(SingletonBase 
     INTERFACE 
         ${CMAKE_CURRENT_SOURCE_DIR}/include

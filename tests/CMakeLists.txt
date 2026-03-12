@@ -1,3 +1,4 @@
+# For testing Cross-library boundary safety of SingletonBase
 add_subdirectory(externalSingleton)
 
 add_executable(tst_singletonbase

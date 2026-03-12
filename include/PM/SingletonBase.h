@@ -1,16 +1,6 @@
 #ifndef SINGLETONBASE_H
 #define SINGLETONBASE_H
 
-//
-//  W A R N I N G
-//  -------------
-//
-// This file is not part of the ProbeMaestro API. It exists purely as an
-// implementation detail. This header file may change from version to
-// version without notice, or even be removed.
-//
-//
-
 // clang-format off
 #define PM_SINGLETON_BASE(CLASS_NAME)                                          \
     friend class PM::internal::SingletonBase<CLASS_NAME>;                      \
