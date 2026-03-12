@@ -1,6 +1,3 @@
-cmake_minimum_required(VERSION 3.10)
-project(ExternalSingleton)
-
 # Add the external Singleton library source files here
 # For example:
 # add_library(ExternalSingleton STATIC

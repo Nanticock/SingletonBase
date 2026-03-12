@@ -6,11 +6,9 @@ add_executable(tst_singletonbase
 
 target_link_libraries(tst_singletonbase
     PRIVATE
-        PM::Core
         ExternalSingleton
 )
 
-include(CTest)
 enable_testing()
 
 add_test(NAME tst_singletonbase
