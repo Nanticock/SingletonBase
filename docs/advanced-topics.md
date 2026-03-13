@@ -59,7 +59,7 @@ This document covers advanced concepts, best practices, and implementation detai
 
 ### Using ScopedSingletonState
 
-`ScopedSingletonState` is the primary tool for making singletons testable. It provides RAII-based temporary instance replacement with automatic restoration.
+`ScopedSingletonState` [see ScopedSingletonState class](classes/ScopedSingletonState.md) is the primary tool for making singletons testable. It provides RAII-based temporary instance replacement with automatic restoration.
 
 ```cpp
 // Basic test isolation
@@ -301,38 +301,6 @@ public:
 
 > **Warning:** Circular dependencies between singletons can lead to undefined destruction behavior and should be avoided.
 
-## Testing Best Practices
-
-### Using ScopedSingletonState
-
-`ScopedSingletonState` is the primary tool for making singletons testable. It provides RAII-based temporary instance replacement with automatic restoration.
-
-### Test Isolation
-
-Proper test isolation is crucial for reliable unit testing:
-
-1. **Clean State**: Each test should start with a predictable singleton state
-2. **Scoped Replacement**: Use `ScopedSingletonState` to prevent test interference
-3. **State Reset**: Ensure any modifications are properly reset after each test
-
-### Production Code
-
-While `ScopedSingletonState` is essential for testing, it should never be used in production code:
-
-- **Production Safety**: Avoid using scoped states in release builds
-- **Code Clarity**: Production code should use singletons directly without temporary replacements
-- **Performance**: Scoped state creation has overhead that should be avoided in production
-
-### Reference Lifetime
-
-When working with scoped singleton instances:
-
-- **Scope Awareness**: References to scoped instances become invalid when the scope ends
-- **Temporary Access**: Use the `instance()` method of `ScopedSingletonState` for temporary access only
-- **Avoid Storage**: Never store references to scoped instances beyond their intended lifetime
-
-> **Important:** Storing a reference to a scoped instance and accessing it after the `ScopedSingletonState` goes out of scope results in undefined behavior.
-
 ## Cross-Library Boundaries
 
 When singletons need to be shared across dynamic library boundaries, special considerations apply:
@@ -365,7 +333,7 @@ void SharedSingleton::sharedMethod() {
 }
 ```
 
-> **Note:** Use the `PM_SINGLETON_SAFE_*` macros when creating singletons that will be used across library boundaries.
+> **Note:** Use the `PM_SINGLETON_SAFE_*` macros [see SingletonBase class](classes/SingletonBase.md) when creating singletons that will be used across library boundaries.
 
 ## Performance Considerations
 
@@ -388,7 +356,7 @@ class MySingleton : public PM::SingletonBase<MySingleton> {
 
 ### Minimal Cost for Testing Capabilities
 
-When you decide to use `ScopedSingletonState` for testing, you only pay for what you use:
+When you decide to use `ScopedSingletonState` [see ScopedSingletonState class](classes/ScopedSingletonState.md) for testing, you only pay for what you use:
 
 - **Per-Test Instance**: Each `ScopedSingletonState` creates exactly one additional instance of your singleton
 - **Stack Allocation**: If you create scoped states on the stack (recommended), you never pay for heap allocation

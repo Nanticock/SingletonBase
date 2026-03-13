@@ -191,7 +191,7 @@ private:
 };
 ```
 
-**See also:** [Cross-library safety](../advanced-topics.md#cross-library-safety)
+**See also:** [Cross-Library Boundaries](../advanced-topics.md#cross-library-boundaries)
 
 ### PM_SINGLETON_SAFE_SOURCE
 
