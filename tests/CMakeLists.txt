@@ -1,6 +1,8 @@
 # For testing Cross-library boundary safety of SingletonBase
 add_subdirectory(externalSingleton)
 
+find_package(Catch2 REQUIRED)
+
 add_executable(tst_singletonbase
     tst_singletonbase.cpp
 )
@@ -8,6 +10,7 @@ add_executable(tst_singletonbase
 target_link_libraries(tst_singletonbase
     PRIVATE
         ExternalSingleton
+        Catch2::Catch2WithMain
 )
 
 enable_testing()

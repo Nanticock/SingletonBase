@@ -1,7 +1,9 @@
 #include <ExternalSingleton.h>
 
-#include <PM/SingletonBase.h>
 #include <PM/ScopedSingletonState.h>
+#include <PM/SingletonBase.h>
+
+#include <catch2/catch_test_macros.hpp>
 
 #include <string>
 
@@ -14,9 +16,6 @@ const char MOC_FILE_SYSTEM_NAME[] = "Moc file system";
 class Communication : public PM::internal::SingletonBase<Communication>
 {
     PM_SINGLETON_BASE(Communication)
-
-public:
-    //
 
 protected:
     inline Communication()
@@ -61,112 +60,97 @@ private:
     std::string m_name;
 };
 
-class tst_SingletonBase : public QObject
+TEST_CASE("instanceConsistency")
 {
-    Q_OBJECT
-
-private slots:
-    void instanceConsistency();
-    void scopedState();
-    void nestedScopedStates();
-    void polymorphicObjects();
-
-    void BUG83_crossLibraryBoundarySafety();
-    void BUG83_crossLibraryBoundaryScopedStateSafety();
-    void BUG83_crossLibraryBoundaryNestedScopedStateSafety();
-};
-
-void tst_SingletonBase::instanceConsistency()
-{
-    QCOMPARE(&FileSystem::instance(), &FileSystem::instance());
-    QCOMPARE(&Communication::instance(), &Communication::instance());
+    REQUIRE(&FileSystem::instance() == &FileSystem::instance());
+    REQUIRE(&Communication::instance() == &Communication::instance());
 
     void *fileSystemInstance = &FileSystem::instance();
     void *communicationInstance = &Communication::instance();
-    QVERIFY(fileSystemInstance != communicationInstance);
+    REQUIRE(fileSystemInstance != communicationInstance);
 }
 
-void tst_SingletonBase::scopedState()
+TEST_CASE("scopedState")
 {
     Communication *oldCommunicationInstance = &Communication::instance();
 
     {
         PM::internal::ScopedSingletonState<Communication> communicationScopedState;
-        QVERIFY(oldCommunicationInstance != &Communication::instance());
+        REQUIRE(oldCommunicationInstance != &Communication::instance());
 
-        QCOMPARE(&Communication::instance(), &Communication::instance());
-        QCOMPARE(&communicationScopedState.instance(), &Communication::instance());
-        QCOMPARE(&communicationScopedState.instance(), &communicationScopedState.instance());
+        REQUIRE(&Communication::instance() == &Communication::instance());
+        REQUIRE(&communicationScopedState.instance() == &Communication::instance());
+        REQUIRE(&communicationScopedState.instance() == &communicationScopedState.instance());
     }
 
-    QCOMPARE(oldCommunicationInstance, &Communication::instance());
+    REQUIRE(oldCommunicationInstance == &Communication::instance());
 }
 
-void tst_SingletonBase::nestedScopedStates()
+TEST_CASE("nestedScopedStates")
 {
     Communication *state0 = &Communication::instance();
 
     // state1
     {
         PM::internal::ScopedSingletonState<Communication> state1;
-        QCOMPARE(&state1.instance(), &Communication::instance());
+        REQUIRE(&state1.instance() == &Communication::instance());
 
-        QVERIFY(state0 != &state1.instance());
+        REQUIRE(state0 != &state1.instance());
 
         // state2
         {
             PM::internal::ScopedSingletonState<Communication> state2;
-            QCOMPARE(&state2.instance(), &Communication::instance());
+            REQUIRE(&state2.instance() == &Communication::instance());
 
-            QVERIFY(state0 != &state1.instance());
-            QVERIFY(&state1.instance() != &state2.instance());
+            REQUIRE(state0 != &state1.instance());
+            REQUIRE(&state1.instance() != &state2.instance());
         }
-        QCOMPARE(&state1.instance(), &Communication::instance());
+        REQUIRE(&state1.instance() == &Communication::instance());
     }
 
-    QCOMPARE(state0, &Communication::instance());
+    REQUIRE(state0 == &Communication::instance());
 }
 
-void tst_SingletonBase::polymorphicObjects()
+TEST_CASE("polymorphicObjects")
 {
-    QCOMPARE(FileSystem::instance().name(), FILE_SYSTEM_NAME);
+    REQUIRE(FileSystem::instance().name() == FILE_SYSTEM_NAME);
 
     {
         PM::internal::ScopedSingletonState<FileSystemMoc> mocState;
 
-        QCOMPARE(FileSystem::instance().name(), MOC_FILE_SYSTEM_NAME);
+        REQUIRE(FileSystem::instance().name() == MOC_FILE_SYSTEM_NAME);
 
         const char newName[] = "NewName";
         mocState.instance().setName(newName);
 
-        QCOMPARE(FileSystem::instance().name(), newName);
+        REQUIRE(FileSystem::instance().name() == newName);
     }
-    QCOMPARE(FileSystem::instance().name(), FILE_SYSTEM_NAME);
+    REQUIRE(FileSystem::instance().name() == FILE_SYSTEM_NAME);
 }
 
-void tst_SingletonBase::BUG83_crossLibraryBoundarySafety()
+TEST_CASE("BUG83_crossLibraryBoundarySafety")
 {
-    QCOMPARE(&ExternalSingleton::instance(), &TestNamespace::getExternalSingletonInstance());
+    REQUIRE(&ExternalSingleton::instance() == &TestNamespace::getExternalSingletonInstance());
 }
 
-void tst_SingletonBase::BUG83_crossLibraryBoundaryScopedStateSafety()
+TEST_CASE("BUG83_crossLibraryBoundaryScopedStateSafety")
 {
     PM::internal::ScopedSingletonState<ExternalSingleton> baseState;
-    QCOMPARE(&ExternalSingleton::instance(), &baseState.instance());
-    QCOMPARE(&TestNamespace::getExternalSingletonInstance(), &baseState.instance());
+    REQUIRE(&ExternalSingleton::instance() == &baseState.instance());
+    REQUIRE(&TestNamespace::getExternalSingletonInstance() == &baseState.instance());
 
     const int newStageValue = 2;
     ExternalSingleton::instance().setStage(newStageValue);
-    QCOMPARE(ExternalSingleton::instance().stage(), newStageValue);
-    QCOMPARE(ExternalSingleton::instance().stage(), TestNamespace::getExternalSingletonInstance().stage());
+    REQUIRE(ExternalSingleton::instance().stage() == newStageValue);
+    REQUIRE(ExternalSingleton::instance().stage() == TestNamespace::getExternalSingletonInstance().stage());
 
     const char newStageName[] = "new stage";
     ExternalSingleton::instance().setStageName(newStageName);
-    QCOMPARE(ExternalSingleton::instance().stageName(), newStageName);
-    QCOMPARE(ExternalSingleton::instance().stageName(), TestNamespace::getExternalSingletonInstance().stageName());
+    REQUIRE(ExternalSingleton::instance().stageName() == newStageName);
+    REQUIRE(ExternalSingleton::instance().stageName() == TestNamespace::getExternalSingletonInstance().stageName());
 }
 
-void tst_SingletonBase::BUG83_crossLibraryBoundaryNestedScopedStateSafety()
+TEST_CASE("BUG83_crossLibraryBoundaryNestedScopedStateSafety")
 {
     PM::internal::ScopedSingletonState<ExternalSingleton> baseState;
 
@@ -177,13 +161,10 @@ void tst_SingletonBase::BUG83_crossLibraryBoundaryNestedScopedStateSafety()
         const char newStageName[] = "stage 1";
         newState.instance().setStageName(newStageName);
 
-        QCOMPARE(newState.instance().stageName(), newStageName);
-        QCOMPARE(ExternalSingleton::instance().stageName(), newStageName);
-        QCOMPARE(TestNamespace::getExternalSingletonInstance().stageName(), newStageName);
+        REQUIRE(newState.instance().stageName() == newStageName);
+        REQUIRE(ExternalSingleton::instance().stageName() == newStageName);
+        REQUIRE(TestNamespace::getExternalSingletonInstance().stageName() == newStageName);
     }
-    QCOMPARE(oldStageName, ExternalSingleton::instance().stageName());
-    QCOMPARE(oldStageName, TestNamespace::getExternalSingletonInstance().stageName());
+    REQUIRE(oldStageName == ExternalSingleton::instance().stageName());
+    REQUIRE(oldStageName == TestNamespace::getExternalSingletonInstance().stageName());
 }
-
-QTEST_MAIN(tst_SingletonBase)
-#include "tst_singletonbase.moc"
