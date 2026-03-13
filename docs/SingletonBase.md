@@ -23,7 +23,7 @@
 <details>
 <summary>Protected Methods</summary>
 <ul>
-<li><a href="#singletonbase">SingletonBase()</a></li>
+<li><a href="#singletonbase-1">SingletonBase()</a></li>
 <li><a href="#instanceref_impl">instanceRef_impl()</a></li>
 </ul>
 </details>
@@ -170,4 +170,4 @@ void MySingleton::doSomething() {
 
 For testing purposes, `ScopedSingletonState` can temporarily replace the singleton instance.
 
-**See also:** [[ScopedSingletonState]]
+**See also:** [ScopedSingletonState](ScopedSingletonState.md)

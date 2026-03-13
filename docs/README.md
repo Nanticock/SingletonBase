@@ -48,8 +48,8 @@ SingletonBase
 
 Detailed API documentation for the header files is available in the `docs/` directory:
 
-- [[SingletonBase]] - Documentation for `SingletonBase.h`
-- [[ScopedSingletonState]] - Documentation for `ScopedSingletonState.h`
+- [SingletonBase](SingletonBase.md) - Documentation for `SingletonBase.h`
+- [ScopedSingletonState](ScopedSingletonState.md) - Documentation for `ScopedSingletonState.h`
 
 ## Usage
 

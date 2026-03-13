@@ -7,7 +7,7 @@
 <details>
 <summary>Public Methods</summary>
 <ul>
-<li><a href="#scopedsingletonstate">ScopedSingletonState()</a></li>
+<li><a href="#scopedsingletonstate-1">ScopedSingletonState()</a></li>
 <li><a href="#scopedsingletonstate-destructor">~ScopedSingletonState()</a></li>
 <li><a href="#instance">instance()</a></li>
 </ul>
@@ -116,7 +116,7 @@ void testSingletonBehavior() {
 
 - **Thread Safety:** Inherits the thread safety characteristics of `SingletonBase`. Not thread-safe.
 
-**See also:** [[SingletonBase#thread-safety]]
+**See also:** [SingletonBase#thread-safety](SingletonBase.md#thread-safety)
 
 ### Copy/Move Operations
 
@@ -156,4 +156,4 @@ void testSingletonBehavior() {
 
 Requires `SingletonBase.h` for the underlying singleton mechanism.
 
-**See also:** [[SingletonBase]]
+**See also:** [SingletonBase](SingletonBase.md)
