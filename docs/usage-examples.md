@@ -10,7 +10,7 @@ To create a singleton class using SingletonBase:
 #include <PM/SingletonBase.h>
 
 // Define your singleton class
-class MySingleton : public PM::internal::SingletonBase<MySingleton>
+class MySingleton : public PM::SingletonBase<MySingleton>
 {
     PM_SINGLETON_BASE(MySingleton)
 
@@ -37,7 +37,7 @@ For singletons that need to be shared across dynamic library boundaries:
 
 ```cpp
 // In header file
-class MySingleton : public PM::internal::SingletonBase<MySingleton>
+class MySingleton : public PM::SingletonBase<MySingleton>
 {
     PM_SINGLETON_BASE_SAFE_HEADER(MySingleton)
 

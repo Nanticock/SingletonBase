@@ -13,7 +13,7 @@ const char FILE_SYSTEM_NAME[] = "FileSystem";
 const char MOC_FILE_SYSTEM_NAME[] = "Moc file system";
 } // namespace
 
-class Communication : public PM::internal::SingletonBase<Communication>
+class Communication : public PM::SingletonBase<Communication>
 {
     PM_SINGLETON_BASE(Communication)
 
@@ -23,7 +23,7 @@ protected:
     }
 };
 
-class FileSystem : public PM::internal::SingletonBase<FileSystem>
+class FileSystem : public PM::SingletonBase<FileSystem>
 {
     PM_SINGLETON_BASE(FileSystem)
 
@@ -75,7 +75,7 @@ TEST_CASE("scopedState")
     Communication *oldCommunicationInstance = &Communication::instance();
 
     {
-        PM::internal::ScopedSingletonState<Communication> communicationScopedState;
+        PM::ScopedSingletonState<Communication> communicationScopedState;
         REQUIRE(oldCommunicationInstance != &Communication::instance());
 
         REQUIRE(&Communication::instance() == &Communication::instance());
@@ -92,14 +92,14 @@ TEST_CASE("nestedScopedStates")
 
     // state1
     {
-        PM::internal::ScopedSingletonState<Communication> state1;
+        PM::ScopedSingletonState<Communication> state1;
         REQUIRE(&state1.instance() == &Communication::instance());
 
         REQUIRE(state0 != &state1.instance());
 
         // state2
         {
-            PM::internal::ScopedSingletonState<Communication> state2;
+            PM::ScopedSingletonState<Communication> state2;
             REQUIRE(&state2.instance() == &Communication::instance());
 
             REQUIRE(state0 != &state1.instance());
@@ -116,7 +116,7 @@ TEST_CASE("polymorphicObjects")
     REQUIRE(FileSystem::instance().name() == FILE_SYSTEM_NAME);
 
     {
-        PM::internal::ScopedSingletonState<FileSystemMoc> mocState;
+        PM::ScopedSingletonState<FileSystemMoc> mocState;
 
         REQUIRE(FileSystem::instance().name() == MOC_FILE_SYSTEM_NAME);
 
@@ -135,7 +135,7 @@ TEST_CASE("BUG83_crossLibraryBoundarySafety")
 
 TEST_CASE("BUG83_crossLibraryBoundaryScopedStateSafety")
 {
-    PM::internal::ScopedSingletonState<ExternalSingleton> baseState;
+    PM::ScopedSingletonState<ExternalSingleton> baseState;
     REQUIRE(&ExternalSingleton::instance() == &baseState.instance());
     REQUIRE(&TestNamespace::getExternalSingletonInstance() == &baseState.instance());
 
@@ -152,11 +152,11 @@ TEST_CASE("BUG83_crossLibraryBoundaryScopedStateSafety")
 
 TEST_CASE("BUG83_crossLibraryBoundaryNestedScopedStateSafety")
 {
-    PM::internal::ScopedSingletonState<ExternalSingleton> baseState;
+    PM::ScopedSingletonState<ExternalSingleton> baseState;
 
     const std::string oldStageName = ExternalSingleton::instance().stageName();
     {
-        PM::internal::ScopedSingletonState<ExternalSingleton> newState;
+        PM::ScopedSingletonState<ExternalSingleton> newState;
 
         const char newStageName[] = "stage 1";
         newState.instance().setStageName(newStageName);

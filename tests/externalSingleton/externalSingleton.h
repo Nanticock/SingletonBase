@@ -7,7 +7,7 @@
 
 #include <string>
 
-class EXTERNAL_SINGLETON_API ExternalSingleton : public PM::internal::SingletonBase<ExternalSingleton>
+class EXTERNAL_SINGLETON_API ExternalSingleton : public PM::SingletonBase<ExternalSingleton>
 {
     PM_SINGLETON_BASE_SAFE_HEADER(ExternalSingleton)
 
