@@ -1,14 +1,19 @@
-#define CATCH_CONFIG_MAIN
-#include "https://raw.githubusercontent.com/catchorg/Catch2/v3.4.0/single_include/catch2/catch_amalgamated.hpp"
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include <https://raw.githubusercontent.com/doctest/doctest/master/doctest/doctest.h>
+
 #include <vector>
 #include <string>
+#include <filesystem>
 
-// Raw Singleton with vector of paths
 class PathManager {
 public:
     static PathManager& instance() {
         static PathManager inst;
         return inst;
+    }
+
+    std::filesystem::path localSearchPath() const {
+        return std::filesystem::current_path();
     }
 
     void addPath(const std::string& path) {
@@ -19,38 +24,60 @@ public:
         return m_paths;
     }
 
-private:
-    PathManager() = default;
+    std::vector<std::string> getAllSearchPaths() const {
+        std::vector<std::string> result;
+        result.push_back(localSearchPath().string());
+        result.insert(result.end(), m_paths.begin(), m_paths.end());
+        return result;
+    }
+
+    std::vector<std::filesystem::path> getAllFiles() const {
+        std::vector<std::filesystem::path> allFiles;
+
+        for (const auto& dir : getAllSearchPaths()) {
+            std::filesystem::path p(dir);
+
+            if (!std::filesystem::exists(p) || !std::filesystem::is_directory(p))
+                continue;
+
+            for (const auto& entry : std::filesystem::directory_iterator(p)) {
+                if (entry.is_regular_file()) {
+                    allFiles.push_back(entry.path());
+                }
+            }
+        }
+
+        return allFiles;
+    }
 
 private:
+    PathManager() = default;
     std::vector<std::string> m_paths;
 };
 
-TEST_CASE("Add paths to singleton") {
-    // Add some paths to the global singleton
+TEST_CASE("Add one path to singleton") {
     PathManager::instance().addPath("/home/user");
+
+    auto files = PathManager::instance().getAllFiles();
+    CHECK(files.size() == 4);  // 2 from localSearchPath + 2 from added path
+    CHECK(files[0] == "/usr/local/bin/file1.txt");
+    CHECK(files[1] == "/usr/local/bin/file2.txt");
+    CHECK(files[2] == "/home/user/file1.txt");
+    CHECK(files[3] == "/home/user/file2.txt");
+}
+
+TEST_CASE("Add three more paths - shared state demonstration") {
+    // This test sees the path added by the previous test!
+    auto files = PathManager::instance().getAllFiles();
+    REQUIRE(files.size() == 4);  // Still has the files from previous test
+    
+    // Add three more paths
     PathManager::instance().addPath("/tmp");
-    
-    auto paths = PathManager::instance().getPaths();
-    REQUIRE(paths.size() == 2);
-    REQUIRE(paths[0] == "/home/user");
-    REQUIRE(paths[1] == "/tmp");
-}
-
-TEST_CASE("Singleton shared state - paths persist between tests") {
-    // This test sees the paths added by the previous test!
-    auto paths = PathManager::instance().getPaths();
-    REQUIRE(paths.size() == 2);  // Still has the paths from previous test
-    REQUIRE(paths[0] == "/home/user");
-    REQUIRE(paths[1] == "/tmp");
-    
-    // Add more paths
     PathManager::instance().addPath("/var/log");
-}
+    PathManager::instance().addPath("/etc");
 
-TEST_CASE("More shared state demonstration") {
-    // Now has 3 paths: 2 from first test + 1 from second test
-    auto paths = PathManager::instance().getPaths();
-    REQUIRE(paths.size() == 3);
-    REQUIRE(paths[2] == "/var/log");
+    files = PathManager::instance().getAllFiles();
+    REQUIRE(files.size() == 10);  // local + 4 paths = 5 * 2 = 10 files
+    REQUIRE(files[8] == "/var/log/file1.txt");
+    REQUIRE(files[9] == "/var/log/file2.txt");
 }
