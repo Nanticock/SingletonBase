@@ -51,7 +51,7 @@ SingletonBase provides thread-safe access to singleton instances. The implementa
 
 When using singletons across dynamic library boundaries:
 
-- Use the `PM_SINGLETON_BASE_SAFE_*` macros instead of `PM_SINGLETON_BASE`.
+- Use the `PM_SINGLETON_SAFE_*` macros instead of `PM_SINGLETON`.
 - Ensure consistent declaration in headers and implementation in sources.
 - Be aware of library loading/unloading order.
 

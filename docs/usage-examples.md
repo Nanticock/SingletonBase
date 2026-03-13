@@ -12,7 +12,7 @@ To create a singleton class using SingletonBase:
 // Define your singleton class
 class MySingleton : public PM::SingletonBase<MySingleton>
 {
-    PM_SINGLETON_BASE(MySingleton)
+    PM_SINGLETON(MySingleton)
 
 public:
     void doSomething() {
@@ -39,7 +39,7 @@ For singletons that need to be shared across dynamic library boundaries:
 // In header file
 class MySingleton : public PM::SingletonBase<MySingleton>
 {
-    PM_SINGLETON_BASE_SAFE_HEADER(MySingleton)
+    PM_SINGLETON_SAFE_HEADER(MySingleton)
 
 public:
     void doSomething();
@@ -49,7 +49,7 @@ private:
 };
 
 // In source file
-PM_SINGLETON_BASE_SAFE_SOURCE(MySingleton)
+PM_SINGLETON_SAFE_SOURCE(MySingleton)
 
 void MySingleton::doSomething() {
     // Implementation
@@ -68,7 +68,7 @@ void testScopedState() {
     MySingleton* original = &MySingleton::instance();
 
     {
-        PM::internal::ScopedSingletonState<MySingleton> scopedState;
+        PM::ScopedSingletonState<MySingleton> scopedState;
         // Now MySingleton::instance() returns a different instance
         assert(original != &MySingleton::instance());
 

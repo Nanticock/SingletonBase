@@ -15,7 +15,7 @@ const char MOC_FILE_SYSTEM_NAME[] = "Moc file system";
 
 class Communication : public PM::SingletonBase<Communication>
 {
-    PM_SINGLETON_BASE(Communication)
+    PM_SINGLETON(Communication)
 
 protected:
     inline Communication()
@@ -25,7 +25,7 @@ protected:
 
 class FileSystem : public PM::SingletonBase<FileSystem>
 {
-    PM_SINGLETON_BASE(FileSystem)
+    PM_SINGLETON(FileSystem)
 
 public:
     virtual std::string name() const

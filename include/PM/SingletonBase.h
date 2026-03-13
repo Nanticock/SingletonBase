@@ -2,18 +2,18 @@
 #define SINGLETONBASE_H
 
 // clang-format off
-#define PM_SINGLETON_BASE(CLASS_NAME)                                \
-    friend class PM::SingletonBase<CLASS_NAME>;                      \
+#define PM_SINGLETON(CLASS_NAME)                                  \
+    friend class PM::SingletonBase<CLASS_NAME>;                   \
     friend class PM::ScopedSingletonState<CLASS_NAME>;
 
-#define PM_SINGLETON_BASE_SAFE_HEADER(CLASS_NAME)                    \
-    PM_SINGLETON_BASE(CLASS_NAME)                                    \
+#define PM_SINGLETON_SAFE_HEADER(CLASS_NAME)                      \
+    PM_SINGLETON(CLASS_NAME)                                      \
     static CLASS_NAME **instanceRef_impl() noexcept;
 
-#define PM_SINGLETON_BASE_SAFE_SOURCE(CLASS_NAME)                    \
-    CLASS_NAME **CLASS_NAME::instanceRef_impl() noexcept             \
-    {                                                                \
-        return PM::SingletonBase<CLASS_NAME>::instanceRef_impl();    \
+#define PM_SINGLETON_SAFE_SOURCE(CLASS_NAME)                      \
+    CLASS_NAME **CLASS_NAME::instanceRef_impl() noexcept          \
+    {                                                             \
+        return PM::SingletonBase<CLASS_NAME>::instanceRef_impl(); \
     }
 // clang-format on
 

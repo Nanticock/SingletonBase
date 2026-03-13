@@ -1,6 +1,6 @@
 # ScopedSingletonState
 
-`ScopedSingletonState<T>` is a RAII class that temporarily replaces the singleton instance of type T. This class is primarily designed for testing purposes, allowing isolated singleton state management without affecting other parts of the application.
+`PM::ScopedSingletonState<T>` is a RAII class that temporarily replaces the singleton instance of type T. This class is primarily designed for testing purposes, allowing isolated singleton state management without affecting other parts of the application.
 
 ## Table of Contents
 
@@ -15,7 +15,7 @@
 
 ## Public_Methods
 
-### ScopedSingletonState()
+### ScopedSingletonState() noexcept
 
 Constructs a new scoped state, replacing the current singleton instance with a new one.
 
@@ -24,14 +24,14 @@ Constructs a new scoped state, replacing the current singleton instance with a n
 - Stores the current instance pointer
 - Sets the singleton to point to the new instance
 
-### ~ScopedSingletonState()
+### ~ScopedSingletonState() noexcept
 
 Destroys the scoped state, restoring the previous singleton instance.
 
 **Effects:**
 - Restores the singleton to point to the previously stored instance
 
-### T &instance() const
+### T &instance() const noexcept
 
 Returns a reference to the scoped singleton instance.
 

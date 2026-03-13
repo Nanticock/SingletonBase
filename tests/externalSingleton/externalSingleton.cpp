@@ -1,6 +1,6 @@
 #include "externalSingleton.h"
 
-PM_SINGLETON_BASE_SAFE_SOURCE(ExternalSingleton)
+PM_SINGLETON_SAFE_SOURCE(ExternalSingleton)
 
 ExternalSingleton::ExternalSingleton() : m_stage(0), m_stageName("initial stage")
 {

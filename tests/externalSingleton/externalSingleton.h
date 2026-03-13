@@ -9,7 +9,7 @@
 
 class EXTERNAL_SINGLETON_API ExternalSingleton : public PM::SingletonBase<ExternalSingleton>
 {
-    PM_SINGLETON_BASE_SAFE_HEADER(ExternalSingleton)
+    PM_SINGLETON_SAFE_HEADER(ExternalSingleton)
 
 public:
     ExternalSingleton();
