@@ -5,6 +5,21 @@ This document covers advanced concepts, best practices, and implementation detai
 ## Table of Contents
 
 <details>
+<summary>Testing Best Practices</summary>
+<ul>
+<li><a href="#testing-best-practices">Testing Best Practices</a></li>
+<li><a href="#using-scoped-singleton-state">Using ScopedSingletonState</a></li>
+<li><a href="#test-isolation">Test Isolation</a></li>
+<li><a href="#production-code">Production Code</a></li>
+<li><a href="#reference-lifetime">Reference Lifetime</a></li>
+<li><a href="#nested-scopes">Nested Scopes</a></li>
+<li><a href="#filo-stack-behavior">FILO Stack Behavior</a></li>
+<li><a href="#safe-cascading-behavior">Safe Cascading Behavior</a></li>
+<li><a href="#best-practices-for-nested-scopes">Best Practices for Nested Scopes</a></li>
+</ul>
+</details>
+
+<details>
 <summary>Thread Safety</summary>
 <ul>
 <li><a href="#thread-safety">Thread Safety</a></li>
@@ -22,17 +37,6 @@ This document covers advanced concepts, best practices, and implementation detai
 </details>
 
 <details>
-<summary>Testing Best Practices</summary>
-<ul>
-<li><a href="#testing-best-practices">Testing Best Practices</a></li>
-<li><a href="#using-scoped-singleton-state">Using ScopedSingletonState</a></li>
-<li><a href="#test-isolation">Test Isolation</a></li>
-<li><a href="#production-code">Production Code</a></li>
-<li><a href="#reference-lifetime">Reference Lifetime</a></li>
-</ul>
-</details>
-
-<details>
 <summary>Cross-Library Boundaries</summary>
 <ul>
 <li><a href="#cross-library-boundaries">Cross-Library Boundaries</a></li>
@@ -44,29 +48,171 @@ This document covers advanced concepts, best practices, and implementation detai
 <summary>Performance Considerations</summary>
 <ul>
 <li><a href="#performance-considerations">Performance Considerations</a></li>
-<li><a href="#lazy-initialization">Lazy Initialization</a></li>
-<li><a href="#thread-safety-overhead">Thread Safety Overhead</a></li>
-<li><a href="#memory-usage">Memory Usage</a></li>
+<li><a href="#zero-overhead-for-basic-singleton-usage">Zero Overhead for Basic Singleton Usage</a></li>
+<li><a href="#minimal-cost-for-testing-capabilities">Minimal Cost for Testing Capabilities</a></li>
+<li><a href="#scoped-state-implementation-details">Scoped State Implementation Details</a></li>
+<li><a href="#performance-guarantees">Performance Guarantees</a></li>
 </ul>
 </details>
 
-<details>
-<summary>Common Pitfalls</summary>
-<ul>
-<li><a href="#common-pitfalls">Common Pitfalls</a></li>
-<li><a href="#global-state">Global State</a></li>
-<li><a href="#tight-coupling">Tight Coupling</a></li>
-<li><a href="#initialization-order-problems">Initialization Order Problems</a></li>
-</ul>
-</details>
+## Testing Best Practices
 
-<details>
-<summary>Alternatives</summary>
-<ul>
-<li><a href="#alternatives">Alternatives</a></li>
-</ul>
-</details>
+### Using ScopedSingletonState
 
+`ScopedSingletonState` is the primary tool for making singletons testable. It provides RAII-based temporary instance replacement with automatic restoration.
+
+```cpp
+// Basic test isolation
+void testMySingleton() {
+    PM::ScopedSingletonState<MySingleton> scoped;
+    // MySingleton::instance() now returns a fresh instance
+    MySingleton::instance().setValue(42);
+    assert(MySingleton::instance().getValue() == 42);
+    // Original instance restored automatically
+}
+```
+
+### Test Isolation
+
+Proper test isolation is crucial for reliable unit testing:
+
+1. **Clean State**: Each test should start with a predictable singleton state
+2. **Scoped Replacement**: Use `ScopedSingletonState` to prevent test interference
+3. **State Reset**: Ensure any modifications are properly reset after each test
+
+```cpp
+// Multiple tests with proper isolation
+void testCase1() {
+    PM::ScopedSingletonState<MySingleton> scoped;
+    MySingleton::instance().configureForTest1();
+    // Test logic...
+}
+
+void testCase2() {
+    PM::ScopedSingletonState<MySingleton> scoped;
+    MySingleton::instance().configureForTest2();
+    // Different test logic...
+}
+```
+
+### Production Code
+
+While `ScopedSingletonState` is essential for testing, it should never be used in production code:
+
+- **Production Safety**: Avoid using scoped states in release builds
+- **Code Clarity**: Production code should use singletons directly without temporary replacements
+- **Performance**: Scoped state creation has overhead that should be avoided in production
+
+### Reference Lifetime
+
+When working with scoped singleton instances:
+
+- **Scope Awareness**: References to scoped instances become invalid when the scope ends
+- **Temporary Access**: Use the `instance()` method of `ScopedSingletonState` for temporary access only
+- **Avoid Storage**: Never store references to scoped instances beyond their intended lifetime
+
+```cpp
+// Correct usage
+void testCorrect() {
+    PM::ScopedSingletonState<MySingleton> scoped;
+    auto& instance = scoped.instance(); // Direct access to scoped instance
+    instance.doSomething();
+    // instance becomes invalid here
+}
+
+// Incorrect usage - DON'T DO THIS
+MySingleton* badPtr;
+void testIncorrect() {
+    PM::ScopedSingletonState<MySingleton> scoped;
+    badPtr = &scoped.instance(); // Storing reference beyond scope
+}
+badPtr->doSomething(); // Undefined behavior!
+```
+
+> **Important:** Storing a reference to a scoped instance and accessing it after the `ScopedSingletonState` goes out of scope results in undefined behavior.
+
+### Nested Scopes
+
+`ScopedSingletonState` fully supports nested scopes with FILO (First In, Last Out) stack behavior. Creating nested scoped states is completely safe and the recommended pattern for complex testing scenarios.
+
+#### FILO Stack Behavior
+
+When you create nested `ScopedSingletonState` objects, they behave like a stack:
+
+- **Innermost scope** has the highest priority and controls the singleton instance
+- **Outer scopes** are temporarily suspended but maintain their state
+- **Destruction** happens in reverse order (FILO), ensuring proper state restoration
+
+```cpp
+void testNestedScopes() {
+    // Level 1: Original singleton instance
+    MySingleton::instance().setValue(100);
+    assert(MySingleton::instance().getValue() == 100);
+    
+    {
+        // Level 2: First scoped state replaces instance
+        PM::ScopedSingletonState<MySingleton> outerScope;
+        MySingleton::instance().setValue(200);
+        assert(MySingleton::instance().getValue() == 200);
+        
+        {
+            // Level 3: Second scoped state replaces instance again
+            PM::ScopedSingletonState<MySingleton> innerScope;
+            MySingleton::instance().setValue(300);
+            assert(MySingleton::instance().getValue() == 300);
+            
+            // innerScope destroyed here - restores Level 2 instance
+        }
+        
+        // Back to Level 2 instance
+        assert(MySingleton::instance().getValue() == 200);
+        
+        // outerScope destroyed here - restores Level 1 instance
+    }
+    
+    // Back to original instance
+    assert(MySingleton::instance().getValue() == 100);
+}
+```
+
+#### Safe Cascading Behavior
+
+The nested scope system provides robust safety guarantees:
+
+- **Automatic State Preservation**: Each scope saves and restores the previous singleton state
+- **Exception Safety**: Even if exceptions occur, all scopes will properly restore their states during stack unwinding
+- **Memory Safety**: No memory leaks or dangling pointers, even with complex nesting
+- **Performance**: Each nesting level adds minimal overhead (just pointer storage)
+- **Predictability**: State restoration always happens in the correct reverse order
+
+```cpp
+void testExceptionSafety() {
+    MySingleton::instance().setValue(100);
+    
+    try {
+        PM::ScopedSingletonState<MySingleton> scope1;
+        MySingleton::instance().setValue(200);
+        
+        {
+            PM::ScopedSingletonState<MySingleton> scope2;
+            MySingleton::instance().setValue(300);
+            
+            throw std::runtime_error("Test exception");
+            // Even with exception, both scopes will restore properly
+        }
+    } catch (...) {
+        // Original state is fully restored despite exception
+        assert(MySingleton::instance().getValue() == 100);
+    }
+}
+```
+
+#### Best Practices for Nested Scopes
+
+- **Use for Complex Scenarios**: Nested scopes are ideal for testing code that itself creates scoped states
+- **Keep Nesting Shallow**: While safe, very deep nesting can become confusing to follow
+- **Document Intent**: Use comments to clarify what each nesting level represents
+- **Test Isolation**: Each level provides complete isolation from other levels
 
 ## Thread Safety
 
@@ -76,17 +222,48 @@ SingletonBase provides thread-safe access to singleton instances through the Mey
 - **Concurrent Access**: Multiple threads can safely access the same singleton instance simultaneously
 - **Race Condition Prevention**: No race conditions occur during the initialization phase
 
+```cpp
+// Thread-safe singleton access
+void threadFunction1() {
+    MySingleton::instance().threadSafeMethod();
+}
+
+void threadFunction2() {
+    MySingleton::instance().anotherThreadSafeMethod();
+}
+
+// Both threads can safely access the same instance
+std::thread t1(threadFunction1);
+std::thread t2(threadFunction2);
+t1.join(); t2.join();
+```
+
 > **Note:** While the singleton access itself is thread-safe, the singleton's own methods may require additional synchronization if they modify shared state or perform non-atomic operations.
 
 ## Lifetime Management
-
-### Initialization
 
 Singletons created with SingletonBase follow lazy initialization - the instance is created only when first accessed through the `instance()` method. This approach:
 
 - **Reduces Startup Time**: No singleton instances are created until they are actually needed
 - **Avoids Unnecessary Memory Usage**: Resources are allocated only when required
 - **Supports Complex Initialization**: Allows singletons to depend on other system components that may not be available at startup
+
+```cpp
+// Lazy initialization example
+class ConfigManager : public PM::SingletonBase<ConfigManager> {
+    PM_SINGLETON(ConfigManager)
+public:
+    std::string getConfig() {
+        // Instance created here on first access
+        return loadConfigFromFile();
+    }
+private:
+    ConfigManager() {
+        // Constructor called only when first accessed
+        std::cout << "ConfigManager initialized" << std::endl;
+    }
+};
+```
 
 ### Destruction
 
@@ -99,6 +276,28 @@ When singletons have dependencies on each other, destruction order becomes criti
 - **Reverse Initialization Order**: Singletons are destroyed in the reverse order of their creation
 - **Dependency Management**: Ensure that singletons with dependencies are initialized in the correct order
 - **Resource Cleanup**: All resources owned by the singleton should be properly released during destruction
+
+```cpp
+class Logger : public PM::SingletonBase<Logger> {
+    PM_SINGLETON(Logger)
+public:
+    ~Logger() { std::cout << "Logger destroyed" << std::endl; }
+};
+
+class Database : public PM::SingletonBase<Database> {
+    PM_SINGLETON(Database)
+private:
+    Database() {
+        // Logger must be initialized first
+        Logger::instance().log("Database initializing");
+    }
+public:
+    ~Database() {
+        Logger::instance().log("Database destroyed");
+        // Logger still available during destruction
+    }
+};
+```
 
 > **Warning:** Circular dependencies between singletons can lead to undefined destruction behavior and should be avoided.
 
@@ -150,67 +349,95 @@ The order in which dynamic libraries are loaded and unloaded directly impacts si
 - **Cleanup Order**: Reverse loading order for proper cleanup
 - **Runtime Library Management**: Be aware of how your application manages dynamic libraries
 
+```cpp
+// In header file (shared across libraries)
+class SharedSingleton : public PM::SingletonBase<SharedSingleton> {
+    PM_SINGLETON_SAFE_HEADER(SharedSingleton)
+public:
+    void sharedMethod();
+};
+
+// In exactly one source file
+PM_SINGLETON_SAFE_SOURCE(SharedSingleton)
+
+void SharedSingleton::sharedMethod() {
+    // Implementation accessible from any library
+}
+```
+
 > **Note:** Use the `PM_SINGLETON_SAFE_*` macros when creating singletons that will be used across library boundaries.
 
 ## Performance Considerations
 
-### Lazy Initialization
+SingletonBase follows a strict **"pay for what you use"** principle - you only incur costs for the features you actually use. The library itself adds zero overhead to your singleton's memory footprint or performance characteristics.
 
-The lazy initialization approach provides several performance benefits:
+### Zero Overhead for Basic Singleton Usage
 
-- **Startup Performance**: Reduces application startup time by deferring singleton creation
-- **Memory Efficiency**: Only allocates memory when the singleton is actually needed
-- **First Access Latency**: May introduce a small delay on first access due to initialization
+When you use SingletonBase for basic singleton functionality (without testing), you pay exactly the same as a traditional singleton:
 
-### Thread Safety Overhead
+- **Memory Cost**: Only the default singleton instance exists in memory
+- **Performance**: Identical to any other singleton implementation
+- **No Hidden Costs**: No additional data structures or indirections
 
-While thread safety is essential, it comes with some overhead:
+```cpp
+class MySingleton : public PM::SingletonBase<MySingleton> {
+    PM_SINGLETON(MySingleton)
+    // Your business logic here - no performance penalty
+};
+```
 
-- **Synchronization Cost**: Initial access may involve synchronization primitives
-- **Subsequent Access**: Minimal overhead after initialization is complete
-- **Lock Contention**: Multiple threads accessing uninitialized singletons may experience contention
+### Minimal Cost for Testing Capabilities
 
-### Memory Usage
+When you decide to use `ScopedSingletonState` for testing, you only pay for what you use:
 
-Singleton memory usage patterns:
+- **Per-Test Instance**: Each `ScopedSingletonState` creates exactly one additional instance of your singleton
+- **Stack Allocation**: If you create scoped states on the stack (recommended), you never pay for heap allocation
+- **No VTable Overhead**: Instance replacement is done without any virtual function calls or vtable indirections
+- **Automatic Cleanup**: All state management happens within the scoped object itself
 
-- **Persistent Allocation**: Singletons remain allocated for the entire program lifetime
-- **Static Storage**: Uses static storage duration, managed by the runtime
-- **Resource Management**: Singletons should properly manage any resources they own
+```cpp
+void testMySingleton() {
+    // Only cost: one additional instance of MySingleton
+    // No heap allocation if scoped is on stack
+    PM::ScopedSingletonState<MySingleton> scoped;
+    // Test your singleton with isolated state
+}
+```
 
-## Common Pitfalls
+### Scoped State Implementation Details
 
-### Global State
+The `ScopedSingletonState` manages everything internally without affecting your singleton:
 
-Singletons introduce global state, which can complicate code reasoning and testing:
+- **Member Variable Instance**: The new singleton instance is created as a member variable of `ScopedSingletonState`
+- **Stack-Friendly**: Designed for stack allocation with zero heap overhead
+- **Self-Contained**: All state restoration logic is encapsulated within the scoped object
+- **Size Independence**: Your singleton's memory layout and size remain unchanged
+- **No External Dependencies**: The scoped state manages instance pointers internally
 
-- **Hidden Dependencies**: Global state creates implicit dependencies between components
-- **Test Complexity**: Global state makes unit testing more challenging
-- **State Corruption**: Accidental modifications can affect unrelated parts of the system
+```cpp
+// Implementation concept (actual implementation may vary)
+class ScopedSingletonState<T> {
+    T scopedInstance;  // Member variable - no heap allocation needed
+    T* previousInstance;  // Stored for restoration
+    
+public:
+    ScopedSingletonState() {
+        // Store current instance, replace with scoped instance
+    }
+    ~ScopedSingletonState() {
+        // Restore previous instance
+    }
+};
+```
 
-### Tight Coupling
+### Performance Guarantees
 
-Overuse of singletons can lead to tightly coupled code:
+- **No Runtime Overhead**: Basic singleton usage has identical performance to traditional implementations
+- **Minimal Testing Overhead**: Testing only costs the memory of one additional instance per test scope
+- **No Virtual Dispatch**: All instance management uses direct pointers, no vtable lookups
+- **Predictable Costs**: Memory and performance costs scale linearly with testing usage
+- **Zero Production Impact**: Testing code and overhead are completely absent in production builds
 
-- **Dependency Injection**: Consider using dependency injection instead of singletons
-- **Interface Segregation**: Use interfaces to reduce coupling
-- **Modular Design**: Design components to be more independent
-
-### Initialization Order Problems
-
-Initialization order issues can cause subtle bugs:
-
-- **Static Initialization Order Fiasco**: Avoid depending on initialization order between translation units
-- **Complex Dependencies**: Be cautious with singletons that depend on other singletons
-- **Testing Challenges**: Initialization order issues may not manifest in simple test scenarios
-
-## Alternatives
-
-Consider these alternatives when singletons may not be the best solution:
-
-- **Dependency Injection**: Pass dependencies explicitly rather than accessing global instances
-- **Service Locators**: Use service locator patterns for more flexible dependency resolution
-- **Factory Patterns**: Create objects through factories when singleton semantics aren't required
-- **Local Instances**: Use properly scoped local instances when global state isn't needed
+**Bottom Line**: SingletonBase gives you powerful testing capabilities with the confidence that you're only paying for what you actually use. Business logic singletons have zero overhead, and testing only costs the memory of additional instances during test execution.
 
 **See also:** [Class Documentation](classes/)
