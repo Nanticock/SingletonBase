@@ -129,4 +129,4 @@ Returns a reference to the scoped singleton instance for direct access and modif
 
 > **Note:** This method allows test code to modify the singleton's state locally without affecting the global singleton. Changes made through this reference are isolated to the current test scope.
 
-**See also:** [Usage Examples](../usage-examples.md), [Advanced Topics](../advanced-topics.md)
+**See also:** [Advanced Topics](../advanced-topics.md)

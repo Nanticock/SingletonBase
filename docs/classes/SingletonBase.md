@@ -214,4 +214,4 @@ void MySingleton::doSomething() {
 }
 ```
 
-**See also:** [Usage Examples](../usage-examples.md), [Advanced Topics](../advanced-topics.md)
+**See also:** [Advanced Topics](../advanced-topics.md)
