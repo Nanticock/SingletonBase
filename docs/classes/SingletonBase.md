@@ -44,6 +44,8 @@ The class provides a unified implementation of the `instance()` function, which 
 
 To use this CRTP class, you must pass your own class as the template parameter `T` and provide your class name to the macro for proper friend declarations and functionality.
 
+> **Important:** Any class that inherits from `SingletonBase` must be default constructible (have a constructor with no parameters) or have a constructor where all parameters have default values. This is because `SingletonBase` creates instances of your class using the default constructor.
+
 By default, when you inherit from this class, your copy constructor and copy assignment operators become deleted as they are explicitly deleted in `SingletonBase`. The only way to access the constructor of your class is through the `instance()` function and [ScopedSingletonState](ScopedSingletonState.md) for your specific type.
 
 ### Usage
