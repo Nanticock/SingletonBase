@@ -2,7 +2,7 @@
 
 **Make your C++ singletons testable in 2 lines!**
 
-Header-only C++ library for testable singletons. Add one macro, get instant testability.
+Header-only C++11 library for testable singletons. Add one macro, get instant testability.
 
 ## Create a Testable Singleton
 
